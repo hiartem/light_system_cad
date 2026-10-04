@@ -1,10 +1,22 @@
-# Parametric ESP32-S3 case – run inside FreeCAD:  exec(open("/home/apolyakov/dev/light_system_case/esp32s3_case.py").read())
+# Parametric ESP32-S3 case – run inside FreeCAD (Macro → Macros… → Execute), or from the Python console:
+#   p = "/path/to/esp32s3_case.py"; exec(open(p).read(), {"__file__": p})
+# Output (.FCStd + STLs) is written next to this script.
 # All dimensions in mm. Values marked "verify" are typical figures – measure your parts.
-import FreeCAD as App, Part, math
+import FreeCAD as App, Part, math, os
 from FreeCAD import Vector as V
 
 DOC = "ESP32S3_Case"
-OUT = "/home/apolyakov/dev/light_system_case/ESP32S3_Case"
+
+def _script_dir():
+    f = globals().get("__file__")
+    if f and os.path.basename(f) == "esp32s3_case.py":
+        return os.path.dirname(os.path.abspath(f))
+    # exec() without __file__: fall back to where the open document was saved
+    if DOC in App.listDocuments() and App.getDocument(DOC).FileName:
+        return os.path.dirname(App.getDocument(DOC).FileName)
+    raise RuntimeError('Cannot locate script folder – run with exec(open(p).read(), {"__file__": p})')
+
+OUT = os.path.join(_script_dir(), DOC)
 X, Y = V(1, 0, 0), V(0, 1, 0)
 
 # ---------------- Components ----------------
@@ -310,7 +322,10 @@ for i in range(len(names)):
         if v > 0.01: bad[f"{names[i]}∩{k}"] = round(v, 2)
 print("interferences:", bad or "none", "| valid:", base.isValid(), lid.isValid(), knob.isValid())
 print("outer %.1f x %.1f x %.1f mm" % (oL, oW, base_h + lid_t))
+if not App.GuiUp:
+    print("WARNING: headless run – part colours are not saved; rebuild inside FreeCAD GUI to keep them")
 doc.saveAs(OUT + ".FCStd")
+# STLs in print orientation, sitting on z=0
 base.exportStl(OUT + "_base.stl")
-lid.exportStl(OUT + "_lid.stl")
+lp = lid.copy(); lp.rotate(V(0, 0, 0), X, 180); lp.translate(V(0, oW, lid_t)); lp.exportStl(OUT + "_lid.stl")   # outer face on bed
 kp = knob.copy(); kp.rotate(V(0, 0, 0), X, 180); kp.translate(V(0, 0, k_h)); kp.exportStl(OUT + "_knob.stl")

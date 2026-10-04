@@ -47,19 +47,26 @@ USB before you plug in USB for programming.
 | `esp32s3_case.py` | Parametric build script (source of truth) |
 | `ESP32S3_Case.FCStd` | FreeCAD document with the case and reference models of all components |
 | `ESP32S3_Case_base.stl` | Base, print-ready |
-| `ESP32S3_Case_lid.stl` | Lid (flip top face down in the slicer) |
+| `ESP32S3_Case_lid.stl` | Lid, already in print orientation (outer face on the bed) |
 | `ESP32S3_Case_knob.stl` | Encoder knob, already in print orientation |
 
 ## Rebuilding the model
 
-Open FreeCAD and run in the Python console:
+In FreeCAD, run `esp32s3_case.py` via **Macro → Macros… → Execute**, or from the Python console:
 
 ```python
-exec(open("/path/to/light_system_cad/esp32s3_case.py").read())
+p = "/path/to/light_system_cad/esp32s3_case.py"; exec(open(p).read(), {"__file__": p})
 ```
 
-Update the `OUT` path at the top of the script to your checkout location first. The script
-rebuilds the document, checks every part pair for interference and re-exports the STLs.
+Headless, without the GUI (geometry and STLs only: part colours are stored by the GUI,
+so a headless rebuild saves an all-gray `.FCStd`. Rebuild inside FreeCAD to restore them):
+
+```sh
+freecadcmd -c 'p="/path/to/light_system_cad/esp32s3_case.py"; exec(open(p).read(), {"__file__": p})'
+```
+
+The script rebuilds the document, checks every part pair for interference and writes
+`ESP32S3_Case.FCStd` and the STLs **next to itself**. No paths need editing.
 
 All dimensions are parameters at the top of the script. Values marked **verify** are
 typical figures for those parts. Measure your components and adjust them before
